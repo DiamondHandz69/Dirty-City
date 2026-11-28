@@ -1,0 +1,30 @@
+name: Archive cinematic trailer
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/archive-trailer.yml
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download existing cinematic trailer before temporary URL expires
+        env:
+          SOURCE_URL: 'https://files2.heygen.ai/video/model_watermark/2b5b778ead4d42b0a3da5794809d0745-marked.mp4?Expires=1796404330&Signature=QUypddbY51MLlZaqek4TjNxjjBMtAjFhS2Fam0Ob0RcRmht2l26iwecgXI9E0ld4rwpFfaPYGcsmpeuv4uAm5~mRJQMMFqhpJvt1sGcmyK-RzkrEu~KIhaZ4U0G6wu~0he8-fni25cIvHav3yQMJki3EvJGZENIRmljFvqq7ZCL7a2dVQmqLyQCj8ZshE2JeLi9DYLBkqPiAeF3-lJCDBARh4p1290JtI0VRTQBnKIfuAKu27qVs5RAfi~EUqC3qCtSwzzx3IxJdfEs6ZBfPryTfVc1OhkLk2M0lZWBKu6-X0bvhHK6QrwG9sL68712LXXHUfRYaLuNGkO42Lna8qw__&Key-Pair-Id=K3H8X2ML80PLF9'
+        run: |
+          mkdir -p assets/movie
+          curl --fail --location --retry 3 "$SOURCE_URL" -o assets/movie/dirty-city-trailer.mp4
+          test "$(wc -c < assets/movie/dirty-city-trailer.mp4)" -gt 100000
+          file assets/movie/dirty-city-trailer.mp4
+      - name: Commit permanent trailer to website
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/movie/dirty-city-trailer.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive existing cinematic trailer for permanent website playback"
+            git push
+          fi
